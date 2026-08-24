@@ -5,18 +5,21 @@ const useFinanceStore = create(
   persist(
     (set) => ({
       transactions: [],
-      // 거래 추가 (CRUD 중 C)
-      addTransaction: (transaction) => set((state) => ({
-        transactions: [transaction, ...state.transactions]
+      
+      // 1. 거래 추가 로직
+      addTransaction: (newTx) => set((state) => ({
+        transactions: [{ ...newTx, id: `txn_${Date.now()}`, createdAt: new Date().toISOString() }, ...state.transactions]
       })),
-      // 거래 삭제 (CRUD 중 D)
+      
+      // 2. 거래 삭제 로직
       deleteTransaction: (id) => set((state) => ({
-        transactions: state.transactions.filter(t => t.id !== id)
+        transactions: state.transactions.filter(tx => tx.id !== id)
       })),
-      // 추후 Budget, Goals 상태도 여기에 추가
+      
+      // 차후 Budget, Goals 등을 여기에 추가합니다.
     }),
     {
-      name: 'finance_transactions', // localStorage 키 이름 [cite: 80]
+      name: 'finance_transactions', // localStorage에 저장될 Key 이름
     }
   )
 );
