@@ -1,0 +1,13 @@
+:root {
+  --bg-color: #FAFAF7;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --accent-orange: #FF7B28;
+  --border-radius: 8px;
+}
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  margin: 0;
+  font-family: sans-serif;
+}
