@@ -4,8 +4,8 @@ import { persist } from 'zustand/middleware';
 const useFinanceStore = create(
   persist(
     (set) => ({
+      // --- 1. 거래 내역 (Transactions) ---
       transactions: [],
-      // 기존 거래 내역 액션들...
       addTransaction: (newTx) => set((state) => ({
         transactions: [{ ...newTx, id: `txn_${Date.now()}`, createdAt: new Date().toISOString() }, ...state.transactions]
       })),
@@ -13,11 +13,8 @@ const useFinanceStore = create(
         transactions: state.transactions.filter(tx => tx.id !== id)
       })),
 
-      // --- 새로 추가되는 예산(Budget) 상태 및 액션 ---
-      // 구조: { '2026-08': { '식비': 500000, '교통': 100000 } }
+      // --- 2. 예산 (Budgets) ---
       budgets: {}, 
-      
-      // 예산 설정 및 수정
       setBudget: (month, category, amount) => set((state) => {
         const monthBudgets = state.budgets[month] || {};
         return {
@@ -27,8 +24,6 @@ const useFinanceStore = create(
           }
         };
       }),
-
-      // 예산 삭제
       deleteBudget: (month, category) => set((state) => {
         const monthBudgets = { ...state.budgets[month] };
         delete monthBudgets[category];
@@ -39,9 +34,23 @@ const useFinanceStore = create(
           }
         };
       }),
+
+      // --- 3. 저축 목표 (Goals) ---
+      goals: [],
+      addGoal: (goal) => set((state) => ({
+        goals: [{ ...goal, id: `goal_${Date.now()}`, createdAt: new Date().toISOString() }, ...state.goals]
+      })),
+      updateGoal: (id, currentAmount) => set((state) => ({
+        goals: state.goals.map(goal => 
+          goal.id === id ? { ...goal, currentAmount: Number(currentAmount) } : goal
+        )
+      })),
+      deleteGoal: (id) => set((state) => ({
+        goals: state.goals.filter(goal => goal.id !== id)
+      })),
     }),
     {
-      name: 'finance_data', // 스토리지가 통합되므로 이름을 변경하거나 유지합니다.
+      name: 'finance_data', 
     }
   )
 );
