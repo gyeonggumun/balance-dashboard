@@ -1,10 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ReceiptText, Wallet } from 'lucide-react'; // Wallet 아이콘 추가
+import { LayoutDashboard, ReceiptText, Wallet, PieChart, Target } from 'lucide-react'; 
 
 export default function Sidebar() {
   const location = useLocation();
 
-  // 현재 경로에 따라 활성화된 메뉴 색상을 변경하는 스타일 함수
   const getLinkStyle = (path) => ({
     color: location.pathname === path ? '#FF7B28' : '#666',
     textDecoration: 'none',
@@ -31,10 +30,19 @@ export default function Sidebar() {
             <ReceiptText size={20} /> 거래 내역
           </Link>
         </li>
-        {/* 예산 관리 메뉴 추가 */}
         <li>
           <Link to="/budget" style={getLinkStyle('/budget')}>
             <Wallet size={20} /> 예산 관리
+          </Link>
+        </li>
+        <li>
+          <Link to="/statistics" style={getLinkStyle('/statistics')}>
+            <PieChart size={20} /> 통계 분석
+          </Link>
+        </li>
+        <li>
+          <Link to="/goals" style={getLinkStyle('/goals')}>
+            <Target size={20} /> 저축 목표
           </Link>
         </li>
       </ul>
