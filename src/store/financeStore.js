@@ -5,21 +5,43 @@ const useFinanceStore = create(
   persist(
     (set) => ({
       transactions: [],
-      
-      // 1. 거래 추가 로직
+      // 기존 거래 내역 액션들...
       addTransaction: (newTx) => set((state) => ({
         transactions: [{ ...newTx, id: `txn_${Date.now()}`, createdAt: new Date().toISOString() }, ...state.transactions]
       })),
-      
-      // 2. 거래 삭제 로직
       deleteTransaction: (id) => set((state) => ({
         transactions: state.transactions.filter(tx => tx.id !== id)
       })),
+
+      // --- 새로 추가되는 예산(Budget) 상태 및 액션 ---
+      // 구조: { '2026-08': { '식비': 500000, '교통': 100000 } }
+      budgets: {}, 
       
-      // 차후 Budget, Goals 등을 여기에 추가합니다.
+      // 예산 설정 및 수정
+      setBudget: (month, category, amount) => set((state) => {
+        const monthBudgets = state.budgets[month] || {};
+        return {
+          budgets: {
+            ...state.budgets,
+            [month]: { ...monthBudgets, [category]: amount }
+          }
+        };
+      }),
+
+      // 예산 삭제
+      deleteBudget: (month, category) => set((state) => {
+        const monthBudgets = { ...state.budgets[month] };
+        delete monthBudgets[category];
+        return {
+          budgets: {
+            ...state.budgets,
+            [month]: monthBudgets
+          }
+        };
+      }),
     }),
     {
-      name: 'finance_transactions', // localStorage에 저장될 Key 이름
+      name: 'finance_data', // 스토리지가 통합되므로 이름을 변경하거나 유지합니다.
     }
   )
 );
