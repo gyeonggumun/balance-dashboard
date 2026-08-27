@@ -48,6 +48,19 @@ const useFinanceStore = create(
       deleteGoal: (id) => set((state) => ({
         goals: state.goals.filter(goal => goal.id !== id)
       })),
+
+      // --- 4. 설정 (Settings) 데이터 관리 ---
+      resetAll: () => set(() => ({
+        transactions: [],
+        budgets: {},
+        goals: []
+      })),
+
+      restoreData: (parsedData) => set(() => ({
+        transactions: parsedData.transactions || [],
+        budgets: parsedData.budgets || {},
+        goals: parsedData.goals || []
+      })),
     }),
     {
       name: 'finance_data', 
