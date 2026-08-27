@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ReceiptText, Wallet, PieChart, Target } from 'lucide-react'; 
+import { LayoutDashboard, ReceiptText, Wallet, PieChart, Target, Settings as SettingsIcon } from 'lucide-react';
 
 export default function Sidebar() {
   const location = useLocation();
@@ -20,29 +20,17 @@ export default function Sidebar() {
       <h2 style={{ color: '#FF7B28', marginBottom: '30px', paddingLeft: '8px' }}>Balance.</h2>
       
       <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <li><Link to="/" style={getLinkStyle('/')}><LayoutDashboard size={20} /> 대시보드</Link></li>
+        <li><Link to="/transactions" style={getLinkStyle('/transactions')}><ReceiptText size={20} /> 거래 내역</Link></li>
+        <li><Link to="/budget" style={getLinkStyle('/budget')}><Wallet size={20} /> 예산 관리</Link></li>
+        <li><Link to="/statistics" style={getLinkStyle('/statistics')}><PieChart size={20} /> 통계 분석</Link></li>
+        <li><Link to="/goals" style={getLinkStyle('/goals')}><Target size={20} /> 저축 목표</Link></li>
+        
+        <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '16px 0' }} />
+        
         <li>
-          <Link to="/" style={getLinkStyle('/')}>
-            <LayoutDashboard size={20} /> 대시보드
-          </Link>
-        </li>
-        <li>
-          <Link to="/transactions" style={getLinkStyle('/transactions')}>
-            <ReceiptText size={20} /> 거래 내역
-          </Link>
-        </li>
-        <li>
-          <Link to="/budget" style={getLinkStyle('/budget')}>
-            <Wallet size={20} /> 예산 관리
-          </Link>
-        </li>
-        <li>
-          <Link to="/statistics" style={getLinkStyle('/statistics')}>
-            <PieChart size={20} /> 통계 분석
-          </Link>
-        </li>
-        <li>
-          <Link to="/goals" style={getLinkStyle('/goals')}>
-            <Target size={20} /> 저축 목표
+          <Link to="/settings" style={getLinkStyle('/settings')}>
+            <SettingsIcon size={20} /> 설정
           </Link>
         </li>
       </ul>

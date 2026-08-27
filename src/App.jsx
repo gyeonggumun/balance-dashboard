@@ -4,7 +4,8 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Budget from './pages/Budget';
 import Statistics from './pages/Statistics';
-import Goals from './pages/Goals'; 
+import Goals from './pages/Goals';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -16,10 +17,10 @@ function App() {
           <Route path="/budget" element={<Budget />} />
           <Route path="/statistics" element={<Statistics />} />
           <Route path="/goals" element={<Goals />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>
     </BrowserRouter>
   );
 }
-
 export default App;
