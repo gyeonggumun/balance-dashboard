@@ -1,5 +1,8 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import './styles/global.css'; // 전역 CSS 불러오기
+import './styles/global.css';
+import useFinanceStore from './store/financeStore';
+
 import Layout from './components/common/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
@@ -9,6 +12,12 @@ import Goals from './pages/Goals';
 import Settings from './pages/Settings';
 
 function App() {
+  const theme = useFinanceStore((state) => state.theme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   return (
     <BrowserRouter>
       <Layout>
@@ -24,4 +33,5 @@ function App() {
     </BrowserRouter>
   );
 }
+
 export default App;
