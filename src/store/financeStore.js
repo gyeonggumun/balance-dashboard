@@ -4,6 +4,12 @@ import { persist } from 'zustand/middleware';
 const useFinanceStore = create(
   persist(
     (set) => ({
+      // --- 0. 테마 (다크 모드) 설정 ---
+      theme: 'light',
+      toggleTheme: () => set((state) => ({ 
+        theme: state.theme === 'light' ? 'dark' : 'light' 
+      })),
+
       // --- 1. 거래 내역 (Transactions) ---
       transactions: [],
       addTransaction: (newTx) => set((state) => ({
