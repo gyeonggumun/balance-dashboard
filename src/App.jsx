@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import './styles/global.css'; // 전역 CSS 불러오기
 import Layout from './components/common/Layout';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
