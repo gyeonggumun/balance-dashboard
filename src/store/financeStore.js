@@ -10,7 +10,28 @@ const useFinanceStore = create(
         theme: state.theme === 'light' ? 'dark' : 'light' 
       })),
 
-      // --- 1. 거래 내역 (Transactions) ---
+      // --- 1. 사용자 지정 카테고리 (Categories) ---
+      categories: {
+        expense: ['식비', '교통', '쇼핑', '주거', '통신', '구독', '의료', '여가', '교육', '기타'],
+        income: ['급여', '부수입', '용돈', '환급', '기타']
+      },
+      addCategory: (type, category) => set((state) => {
+        if (state.categories[type].includes(category)) return state;
+        return {
+          categories: {
+            ...state.categories,
+            [type]: [...state.categories[type], category]
+          }
+        };
+      }),
+      deleteCategory: (type, category) => set((state) => ({
+        categories: {
+          ...state.categories,
+          [type]: state.categories[type].filter(c => c !== category)
+        }
+      })),
+
+      // --- 2. 거래 내역 (Transactions) ---
       transactions: [],
       addTransaction: (newTx) => set((state) => ({
         transactions: [{ ...newTx, id: `txn_${Date.now()}`, createdAt: new Date().toISOString() }, ...state.transactions]
@@ -18,8 +39,12 @@ const useFinanceStore = create(
       deleteTransaction: (id) => set((state) => ({
         transactions: state.transactions.filter(tx => tx.id !== id)
       })),
+      // CSV에서 불러온 대량의 거래 내역을 한 번에 추가하고 날짜순 정렬
+      importTransactions: (importedTxs) => set((state) => ({
+        transactions: [...importedTxs, ...state.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      })),
 
-      // --- 2. 예산 (Budgets) ---
+      // --- 3. 예산 (Budgets) ---
       budgets: {}, 
       setBudget: (month, category, amount) => set((state) => {
         const monthBudgets = state.budgets[month] || {};
@@ -41,7 +66,7 @@ const useFinanceStore = create(
         };
       }),
 
-      // --- 3. 저축 목표 (Goals) ---
+      // --- 4. 저축 목표 (Goals) ---
       goals: [],
       addGoal: (goal) => set((state) => ({
         goals: [{ ...goal, id: `goal_${Date.now()}`, createdAt: new Date().toISOString() }, ...state.goals]
@@ -55,17 +80,22 @@ const useFinanceStore = create(
         goals: state.goals.filter(goal => goal.id !== id)
       })),
 
-      // --- 4. 설정 (Settings) 데이터 관리 ---
+      // --- 5. 설정 (Settings) 데이터 관리 ---
       resetAll: () => set(() => ({
         transactions: [],
         budgets: {},
-        goals: []
+        goals: [],
+        categories: {
+          expense: ['식비', '교통', '쇼핑', '주거', '통신', '구독', '의료', '여가', '교육', '기타'],
+          income: ['급여', '부수입', '용돈', '환급', '기타']
+        }
       })),
 
-      restoreData: (parsedData) => set(() => ({
+      restoreData: (parsedData) => set((state) => ({
         transactions: parsedData.transactions || [],
         budgets: parsedData.budgets || {},
-        goals: parsedData.goals || []
+        goals: parsedData.goals || [],
+        categories: parsedData.categories || state.categories
       })),
     }),
     {
