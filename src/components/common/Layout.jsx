@@ -1,66 +1,131 @@
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ReceiptText, Wallet, PieChart, Target, Settings as SettingsIcon, Moon, Sun } from 'lucide-react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  ReceiptText,
+  Wallet,
+  PieChart,
+  Target,
+  Settings as SettingsIcon,
+  Moon,
+  Sun,
+  Sparkles,
+} from 'lucide-react';
 import useFinanceStore from '../../store/financeStore';
 
-const Sidebar = ({ location }) => {
-  const isActive = (path) => location.pathname === path ? 'sidebar-link active' : 'sidebar-link';
-  const { theme, toggleTheme } = useFinanceStore();
+const navItems = [
+  { path: '/', label: '대시보드', mobileLabel: '홈', icon: LayoutDashboard },
+  { path: '/transactions', label: '거래 내역', mobileLabel: '내역', icon: ReceiptText },
+  { path: '/budget', label: '예산 관리', mobileLabel: '예산', icon: Wallet },
+  { path: '/statistics', label: '통계 분석', mobileLabel: '통계', icon: PieChart },
+  { path: '/goals', label: '저축 목표', mobileLabel: '목표', icon: Target },
+];
+
+function ThemeToggle({ compact = false }) {
+  const theme = useFinanceStore((state) => state.theme);
+  const toggleTheme = useFinanceStore((state) => state.toggleTheme);
+  const isDark = theme === 'dark';
 
   return (
-    <nav className="sidebar">
-      <h2 className="sidebar-logo">Balance.</h2>
-      <ul className="sidebar-nav" style={{ flex: 1 }}>
-        <li><Link to="/" className={isActive('/')}><LayoutDashboard size={20} /> 대시보드</Link></li>
-        <li><Link to="/transactions" className={isActive('/transactions')}><ReceiptText size={20} /> 거래 내역</Link></li>
-        <li><Link to="/budget" className={isActive('/budget')}><Wallet size={20} /> 예산 관리</Link></li>
-        <li><Link to="/statistics" className={isActive('/statistics')}><PieChart size={20} /> 통계 분석</Link></li>
-        <li><Link to="/goals" className={isActive('/goals')}><Target size={20} /> 저축 목표</Link></li>
-        <hr style={{ border: 'none', borderTop: '1px solid var(--border-color)', margin: '16px 0' }} />
-        <li><Link to="/settings" className={isActive('/settings')}><SettingsIcon size={20} /> 설정</Link></li>
-      </ul>
-      
-      <button 
-        onClick={toggleTheme} 
-        style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', color: 'var(--text-secondary)', padding: '12px 16px', cursor: 'pointer', borderRadius: '8px', fontSize: '15px' }}
-      >
-        {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />} 
-        {theme === 'light' ? '다크 모드' : '라이트 모드'}
-      </button>
-    </nav>
+    <button
+      type="button"
+      className={compact ? 'icon-button theme-toggle' : 'theme-toggle'}
+      onClick={toggleTheme}
+      aria-label={isDark ? '라이트 모드로 전환' : '다크 모드로 전환'}
+      title={isDark ? '라이트 모드' : '다크 모드'}
+    >
+      {isDark ? <Sun size={18} /> : <Moon size={18} />}
+      {!compact && <span>{isDark ? '라이트 모드' : '다크 모드'}</span>}
+    </button>
   );
-};
+}
+
+function Navigation({ mobile = false }) {
+  return (
+    <ul className={mobile ? 'mobile-nav-list' : 'sidebar-nav'}>
+      {navItems.map(({ path, label, mobileLabel, icon: Icon }) => (
+        <li key={path}>
+          <NavLink
+            to={path}
+            end={path === '/'}
+            className={({ isActive }) => mobile
+              ? `bottom-nav-link${isActive ? ' active' : ''}`
+              : `sidebar-link${isActive ? ' active' : ''}`}
+          >
+            <Icon size={mobile ? 19 : 18} strokeWidth={1.8} />
+            <span>{mobile ? mobileLabel : label}</span>
+          </NavLink>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Sidebar() {
+  return (
+    <aside className="sidebar">
+      <div>
+        <Link to="/" className="brand-block">
+          <span className="brand-mark"><Sparkles size={17} /></span>
+          <span>
+            <strong className="sidebar-logo">Balance.</strong>
+            <small>PERSONAL FINANCE</small>
+          </span>
+        </Link>
+        <p className="sidebar-intro">내 돈의 흐름을 한눈에 보고, 더 나은 다음을 설계하세요.</p>
+
+        <div className="sidebar-section-label">WORKSPACE</div>
+        <Navigation />
+
+        <div className="sidebar-section-label sidebar-section-label-secondary">MANAGE</div>
+        <NavLink to="/settings" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
+          <SettingsIcon size={18} strokeWidth={1.8} />
+          <span>설정</span>
+        </NavLink>
+      </div>
+
+      <div className="sidebar-footer">
+        <div className="sidebar-profile">
+          <div className="profile-avatar">GG</div>
+          <div>
+            <strong>나의 지갑</strong>
+            <span>LOCAL-FIRST MODE</span>
+          </div>
+        </div>
+        <ThemeToggle />
+      </div>
+    </aside>
+  );
+}
+
+function MobileHeader() {
+  return (
+    <header className="mobile-header">
+      <Link to="/" className="mobile-brand">
+        <span className="brand-mark"><Sparkles size={15} /></span>
+        <strong>Balance.</strong>
+      </Link>
+      <div className="mobile-header-actions">
+        <ThemeToggle compact />
+        <Link to="/settings" className="icon-button" aria-label="설정">
+          <SettingsIcon size={19} />
+        </Link>
+      </div>
+    </header>
+  );
+}
 
 export default function Layout({ children }) {
   const location = useLocation();
-  const isActiveMobile = (path) => location.pathname === path ? 'bottom-nav-link active' : 'bottom-nav-link';
-  const { theme, toggleTheme } = useFinanceStore();
 
   return (
     <div className="app-container">
-      <header className="mobile-header">
-        <h2 className="mobile-logo">Balance.</h2>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <button onClick={toggleTheme} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: 0 }}>
-            {theme === 'light' ? <Moon size={24} /> : <Sun size={24} />}
-          </button>
-          <Link to="/settings" style={{ color: 'var(--text-secondary)', display: 'flex' }}>
-            <SettingsIcon size={24} />
-          </Link>
-        </div>
-      </header>
-
-      <Sidebar location={location} />
-
-      <main className="main-content">
+      <MobileHeader />
+      <Sidebar />
+      <main className="main-content" key={location.pathname}>
         {children}
       </main>
-
-      <nav className="bottom-nav">
-        <Link to="/" className={isActiveMobile('/')}><LayoutDashboard size={20} /><span>홈</span></Link>
-        <Link to="/transactions" className={isActiveMobile('/transactions')}><ReceiptText size={20} /><span>내역</span></Link>
-        <Link to="/budget" className={isActiveMobile('/budget')}><Wallet size={20} /><span>예산</span></Link>
-        <Link to="/statistics" className={isActiveMobile('/statistics')}><PieChart size={20} /><span>통계</span></Link>
-        <Link to="/goals" className={isActiveMobile('/goals')}><Target size={20} /><span>목표</span></Link>
+      <nav className="bottom-nav" aria-label="모바일 내비게이션">
+        <Navigation mobile />
       </nav>
     </div>
   );
