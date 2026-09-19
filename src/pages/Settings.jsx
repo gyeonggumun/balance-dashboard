@@ -85,7 +85,7 @@ export default function Settings() {
         } else {
           alert('유효한 거래 내역 데이터가 없습니다.');
         }
-      } catch (error) {
+      } catch {
         alert('CSV 파일을 파싱하는 중 오류가 발생했습니다.');
       }
       e.target.value = null;
@@ -109,7 +109,7 @@ export default function Settings() {
       try {
         const parsed = JSON.parse(event.target.result);
         if (parsed.transactions) restoreData(parsed);
-      } catch (error) { alert('오류가 발생했습니다.'); }
+      } catch { alert('오류가 발생했습니다.'); }
       e.target.value = null;
     };
     reader.readAsText(file);

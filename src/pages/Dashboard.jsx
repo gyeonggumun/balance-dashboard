@@ -10,7 +10,11 @@ export default function Dashboard() {
   const monthlyDataMap = transactions.reduce((acc, tx) => {
     const month = tx.date.substring(0, 7);
     if (!acc[month]) acc[month] = { name: month, income: 0, expense: 0 };
-    tx.type === 'income' ? acc[month].income += tx.amount : acc[month].expense += tx.amount;
+    if (tx.type === 'income') {
+      acc[month].income += tx.amount;
+    } else {
+      acc[month].expense += tx.amount;
+    }
     return acc;
   }, {});
   const barChartData = Object.values(monthlyDataMap).sort((a, b) => a.name.localeCompare(b.name));
