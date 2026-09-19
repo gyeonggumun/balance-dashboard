@@ -7,6 +7,7 @@ import {
   Target,
   Settings as SettingsIcon,
   Moon,
+  Plus,
   Sun,
   Sparkles,
 } from 'lucide-react';
@@ -62,7 +63,7 @@ function Navigation({ mobile = false }) {
 
 function Sidebar() {
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" aria-label="주요 내비게이션">
       <div>
         <Link to="/" className="brand-block">
           <span className="brand-mark"><Sparkles size={17} /></span>
@@ -72,11 +73,14 @@ function Sidebar() {
           </span>
         </Link>
         <p className="sidebar-intro">내 돈의 흐름을 한눈에 보고, 더 나은 다음을 설계하세요.</p>
+        <Link to="/transactions" className="sidebar-quick-action">
+          <Plus size={16} strokeWidth={2.4} /> 빠른 거래 기록
+        </Link>
 
-        <div className="sidebar-section-label">WORKSPACE</div>
+        <div className="sidebar-section-label">메뉴</div>
         <Navigation />
 
-        <div className="sidebar-section-label sidebar-section-label-secondary">MANAGE</div>
+        <div className="sidebar-section-label sidebar-section-label-secondary">관리</div>
         <NavLink to="/settings" className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}>
           <SettingsIcon size={18} strokeWidth={1.8} />
           <span>설정</span>
@@ -121,7 +125,7 @@ export default function Layout({ children }) {
     <div className="app-container">
       <MobileHeader />
       <Sidebar />
-      <main className="main-content" key={location.pathname}>
+      <main id="main-content" className="main-content" key={location.pathname} tabIndex={-1}>
         {children}
       </main>
       <nav className="bottom-nav" aria-label="모바일 내비게이션">
