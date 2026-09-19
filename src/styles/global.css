@@ -334,6 +334,7 @@ button { cursor: pointer; }
 }
 
 @media (max-width: 820px) {
+  .app-container { display: block; min-height: 100dvh; }
   .sidebar { display: none; }
   .mobile-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: var(--nav-bg); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
   .mobile-brand { color: #fff; font-size: 17px; letter-spacing: -0.04em; }
