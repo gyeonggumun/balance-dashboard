@@ -95,10 +95,12 @@ button { cursor: pointer; }
   top: 0;
   z-index: 20;
   display: flex;
+  align-self: flex-start;
   flex: 0 0 272px;
   flex-direction: column;
   justify-content: space-between;
   width: 272px;
+  height: 100dvh;
   min-height: 100vh;
   padding: 28px 18px 20px;
   overflow: hidden;
