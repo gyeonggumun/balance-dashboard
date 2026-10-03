@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { DEFAULT_ACCOUNT, DEFAULT_ACCOUNT_ID, normalizeFinanceData } from '../utils/accounts.js';
+
+const makeId = () => crypto.randomUUID();
 
 const useFinanceStore = create(
   persist(
@@ -32,17 +35,48 @@ const useFinanceStore = create(
       })),
 
       // --- 2. 거래 내역 (Transactions) ---
+      accounts: [DEFAULT_ACCOUNT],
+      addAccount: (name, openingBalance) => set((state) => ({
+        accounts: [...state.accounts, { id: makeId(), name: name.trim(), openingBalance: Number(openingBalance) || 0 }],
+      })),
+      updateAccount: (id, name, openingBalance) => set((state) => ({
+        accounts: state.accounts.map((account) => account.id === id
+          ? { ...account, name: name.trim(), openingBalance: Number(openingBalance) || 0 }
+          : account),
+      })),
+      deleteAccount: (id) => set((state) => {
+        if (id === DEFAULT_ACCOUNT_ID || state.transactions.some((transaction) =>
+          transaction.accountId === id || transaction.toAccountId === id)) return state;
+        return { accounts: state.accounts.filter((account) => account.id !== id) };
+      }),
       transactions: [],
       addTransaction: (newTx) => set((state) => ({
-        transactions: [{ ...newTx, id: `txn_${Date.now()}`, createdAt: new Date().toISOString() }, ...state.transactions]
+        transactions: [{ ...newTx, id: makeId(), source: 'manual', createdAt: new Date().toISOString() }, ...state.transactions]
       })),
       deleteTransaction: (id) => set((state) => ({
         transactions: state.transactions.filter(tx => tx.id !== id)
       })),
       // CSV에서 불러온 대량의 거래 내역을 한 번에 추가하고 날짜순 정렬
-      importTransactions: (importedTxs) => set((state) => ({
-        transactions: [...importedTxs, ...state.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      })),
+      importTransactions: (importedTxs) => {
+        let added = 0;
+        set((state) => {
+          const existingIds = new Set(state.transactions.map((tx) => tx.id));
+          const existingKeys = new Set(state.transactions.filter((tx) => tx.sourceKey)
+            .map((tx) => `${tx.accountId}:${tx.source}:${tx.sourceKey}`));
+          const accounts = new Set(state.accounts.map((account) => account.id));
+          const unique = importedTxs.filter((tx) => {
+            if (!accounts.has(tx.accountId) || existingIds.has(tx.id)) return false;
+            const key = tx.sourceKey && `${tx.accountId}:${tx.source}:${tx.sourceKey}`;
+            if (key && existingKeys.has(key)) return false;
+            existingIds.add(tx.id);
+            if (key) existingKeys.add(key);
+            return true;
+          });
+          added = unique.length;
+          return { transactions: [...unique, ...state.transactions].sort((a, b) => b.date.localeCompare(a.date)) };
+        });
+        return added;
+      },
 
       // --- 3. 예산 (Budgets) ---
       budgets: {}, 
@@ -82,6 +116,7 @@ const useFinanceStore = create(
 
       // --- 5. 설정 (Settings) 데이터 관리 ---
       resetAll: () => set(() => ({
+        accounts: [DEFAULT_ACCOUNT],
         transactions: [],
         budgets: {},
         goals: [],
@@ -92,7 +127,7 @@ const useFinanceStore = create(
       })),
 
       restoreData: (parsedData) => set((state) => ({
-        transactions: parsedData.transactions || [],
+        ...normalizeFinanceData(parsedData),
         budgets: parsedData.budgets || {},
         goals: parsedData.goals || [],
         categories: parsedData.categories || state.categories
@@ -100,6 +135,8 @@ const useFinanceStore = create(
     }),
     {
       name: 'finance_data', 
+      version: 1,
+      migrate: (savedState) => ({ ...savedState, ...normalizeFinanceData(savedState) }),
     }
   )
 );
