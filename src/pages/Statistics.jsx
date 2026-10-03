@@ -23,6 +23,7 @@ export default function Statistics() {
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter(tx => {
+      if (tx.type === 'transfer') return false;
       if (period === 'thisMonth') return tx.date.startsWith(thisMonth);
       if (period === 'lastMonth') return tx.date.startsWith(lastMonth);
       if (period === 'last3Months') return last3Months.some(m => tx.date.startsWith(m));

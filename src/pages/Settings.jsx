@@ -1,14 +1,17 @@
 import { useState, useRef } from 'react';
 import useFinanceStore from '../store/financeStore';
+import { DEFAULT_ACCOUNT_ID } from '../utils/accounts';
+import { parseCsv } from '../utils/csv';
 
 export default function Settings() {
   const { 
-    transactions, budgets, goals, categories, 
+    accounts, transactions, budgets, goals, categories,
     resetAll, restoreData, addCategory, deleteCategory, importTransactions 
   } = useFinanceStore();
   
   const fileInputRef = useRef(null);
   const csvInputRef = useRef(null);
+  const [importAccountId, setImportAccountId] = useState(DEFAULT_ACCOUNT_ID);
 
   // --- 카테고리 폼 상태 ---
   const [newExpCat, setNewExpCat] = useState('');
@@ -24,7 +27,7 @@ export default function Settings() {
   const handleExportCSV = () => {
     if (transactions.length === 0) return alert('내보낼 거래 내역이 없습니다.');
 
-    const headers = ['id', 'type', 'category', 'amount', 'date', 'memo', 'createdAt'];
+    const headers = ['id', 'type', 'category', 'amount', 'date', 'memo', 'accountId', 'toAccountId', 'source', 'sourceKey', 'createdAt'];
     
     const csvRows = transactions.map(tx => {
       return headers.map(header => {
@@ -54,34 +57,45 @@ export default function Settings() {
     reader.onload = (event) => {
       try {
         const text = event.target.result;
-        const rows = text.split('\n').filter(row => row.trim() !== '');
+        const rows = parseCsv(text);
         
         if (rows.length < 2) return alert('가져올 데이터가 없습니다.');
 
-        const headers = rows[0].split(',').map(h => h.replace(/"/g, '').trim());
+        const headers = rows[0].map((header) => header.trim());
         const importedData = [];
+        const seenRows = new Map();
 
         for (let i = 1; i < rows.length; i++) {
-          const rowValues = rows[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+          const rowValues = rows[i];
           
           const tx = {};
           headers.forEach((header, index) => {
-            let val = rowValues[index] ? rowValues[index].replace(/^"|"$/g, '').trim() : '';
+            const val = rowValues[index]?.trim() || '';
             tx[header] = header === 'amount' ? Number(val) : val;
           });
 
-          if (tx.type && tx.amount && tx.date) {
+          const accountId = accounts.some((account) => account.id === tx.accountId) ? tx.accountId : importAccountId;
+          const rowKey = tx.id || JSON.stringify([tx.type, tx.amount, tx.date, tx.category, tx.memo]);
+          const occurrence = seenRows.get(rowKey) || 0;
+          seenRows.set(rowKey, occurrence + 1);
+
+          if (['income', 'expense', 'transfer'].includes(tx.type) && tx.amount > 0 && tx.date
+            && (tx.type !== 'transfer' || (tx.toAccountId && tx.toAccountId !== accountId
+              && accounts.some((account) => account.id === tx.toAccountId)))) {
             importedData.push({
               ...tx,
-              id: `txn_csv_${Date.now()}_${i}`,
+              id: tx.id || crypto.randomUUID(),
+              accountId,
+              source: 'csv',
+              sourceKey: tx.sourceKey || `${rowKey}:${occurrence}`,
               createdAt: new Date().toISOString()
             });
           }
         }
 
         if (importedData.length > 0) {
-          importTransactions(importedData);
-          alert(`${importedData.length}건의 거래 내역을 성공적으로 불러왔습니다.`);
+          const added = importTransactions(importedData);
+          alert(`${added}건을 추가했습니다. 중복 ${importedData.length - added}건은 건너뛰었습니다.`);
         } else {
           alert('유효한 거래 내역 데이터가 없습니다.');
         }
@@ -95,7 +109,7 @@ export default function Settings() {
 
   // --- JSON 백업 및 복원 ---
   const handleBackup = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ transactions, budgets, goals, categories }, null, 2));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ accounts, transactions, budgets, goals, categories }, null, 2));
     const dlAnchor = document.createElement('a');
     dlAnchor.setAttribute("href", dataStr); dlAnchor.setAttribute("download", `balance_backup.json`);
     document.body.appendChild(dlAnchor); dlAnchor.click(); dlAnchor.remove();
@@ -169,6 +183,11 @@ export default function Settings() {
         <div className="card" style={{ marginBottom: 0 }}>
           <h3 className="card-title">CSV 파일 불러오기</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '20px' }}>외부의 거래 내역을 대량으로 추가합니다.</p>
+          <label className="form-label" style={{ marginBottom: '12px' }}>가져올 계좌
+            <select className="form-input" value={importAccountId} onChange={(e) => setImportAccountId(e.target.value)}>
+              {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
+            </select>
+          </label>
           <input type="file" accept=".csv" ref={csvInputRef} onChange={handleImportCSV} style={{ display: 'none' }} />
           <button onClick={() => csvInputRef.current.click()} className="btn-accent" style={{ width: '100%', background: '#217346', color: '#fff' }}>CSV 가져오기</button>
         </div>

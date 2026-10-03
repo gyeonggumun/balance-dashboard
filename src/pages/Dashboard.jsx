@@ -28,6 +28,7 @@ import {
   YAxis,
 } from 'recharts';
 import useFinanceStore from '../store/financeStore';
+import { getAccountBalance, getAccountId } from '../utils/accounts';
 
 const PIE_COLORS = ['#7667f4', '#4f9cf9', '#17b26a', '#f5b544', '#ff7657', '#a78bfa'];
 
@@ -73,19 +74,20 @@ function EmptyState({ title, description }) {
   );
 }
 
-function ActivityItem({ transaction }) {
+function ActivityItem({ transaction, accountNames }) {
   const isIncome = transaction.type === 'income';
+  const isTransfer = transaction.type === 'transfer';
   return (
     <li className="activity-item">
       <span className="activity-icon">
-        {isIncome ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+        {isIncome ? <ArrowUpRight size={16} /> : isTransfer ? <WalletCards size={16} /> : <ArrowDownRight size={16} />}
       </span>
       <div className="activity-content">
-        <strong>{transaction.memo || transaction.category}</strong>
-        <span>{transaction.category} · {formatDate(transaction.date)}</span>
+        <strong>{transaction.memo || (isTransfer ? '내 계좌 간 이체' : transaction.category)}</strong>
+        <span>{isTransfer ? `${accountNames.get(getAccountId(transaction))} → ${accountNames.get(transaction.toAccountId)}` : transaction.category} · {formatDate(transaction.date)}</span>
       </div>
       <span className={`activity-amount ${isIncome ? 'income' : 'expense'}`}>
-        {isIncome ? '+' : '-'}{formatWon(transaction.amount)}
+        {isTransfer ? '' : isIncome ? '+' : '-'}{formatWon(transaction.amount)}
       </span>
     </li>
   );
@@ -93,7 +95,14 @@ function ActivityItem({ transaction }) {
 
 export default function Dashboard() {
   const transactions = useFinanceStore((state) => state.transactions);
+  const accounts = useFinanceStore((state) => state.accounts);
   const goals = useFinanceStore((state) => state.goals);
+  const accountBalances = useMemo(() => accounts.map((account) => ({
+    ...account,
+    balance: getAccountBalance(account, transactions),
+  })), [accounts, transactions]);
+  const totalBalance = accountBalances.reduce((sum, account) => sum + account.balance, 0);
+  const accountNames = useMemo(() => new Map(accounts.map((account) => [account.id, account.name])), [accounts]);
 
   const analytics = useMemo(() => {
     const monthlyMap = new Map();
@@ -102,6 +111,7 @@ export default function Dashboard() {
     let totalExpense = 0;
 
     transactions.forEach((transaction) => {
+      if (transaction.type === 'transfer') return;
       const amount = Number(transaction.amount) || 0;
       const month = transaction.date.slice(0, 7);
       const monthData = monthlyMap.get(month) || { month, income: 0, expense: 0 };
@@ -131,7 +141,6 @@ export default function Dashboard() {
     return {
       totalIncome,
       totalExpense,
-      currentAsset: totalIncome - totalExpense,
       monthlyData,
       categoryData,
       recentTransactions: transactions.slice(0, 5),
@@ -162,11 +171,11 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <section className="dashboard-hero" aria-label="자산 요약">
+      <section className="dashboard-hero" aria-label="잔액 요약">
         <div className="hero-copy">
           <span className="hero-eyebrow"><Activity size={13} /> Live money pulse</span>
-          <h2 className="hero-title">지금 내 자산은<br /><strong>{formatWon(analytics.currentAsset)}</strong>입니다.</h2>
-          <p>수입과 지출의 흐름을 바탕으로 계산한 누적 자산입니다. 작은 습관이 다음 달의 선택을 바꿔요.</p>
+          <h2 className="hero-title">기록 기준 잔액은<br /><strong>{formatWon(totalBalance)}</strong>입니다.</h2>
+          <p>계좌별 시작 잔액과 기록한 거래로 계산했어요. 실제 은행 잔액과는 다를 수 있습니다.</p>
           <div className="hero-actions">
             <Link to="/statistics" className="btn-primary">전체 분석 보기 <ChevronRight size={15} /></Link>
             <Link to="/goals" className="btn-ghost">목표 확인</Link>
@@ -185,9 +194,9 @@ export default function Dashboard() {
       <section className="grid-4" aria-label="핵심 지표">
         <MetricCard
           icon={WalletCards}
-          label="현재 자산"
-          value={formatWon(analytics.currentAsset)}
-          meta="누적 수입 - 누적 지출"
+          label="기록 기준 잔액"
+          value={formatWon(totalBalance)}
+          meta="시작 잔액 + 수입 - 지출"
           tone={{ color: 'var(--accent-purple)', background: 'rgba(118, 103, 244, .12)', glow: 'rgba(118, 103, 244, .12)' }}
         />
         <MetricCard
@@ -213,6 +222,24 @@ export default function Dashboard() {
           tone={{ color: 'var(--accent-yellow)', background: 'rgba(245, 181, 68, .14)', glow: 'rgba(245, 181, 68, .1)' }}
           positive={savingsRate >= 30}
         />
+      </section>
+
+      <section className="card dashboard-accounts" aria-label="계좌별 기록 기준 잔액">
+        <div className="card-header">
+          <div>
+            <h2 className="card-heading">계좌별 잔액</h2>
+            <p className="card-caption">계좌 간 이체는 전체 수입·지출에 포함하지 않아요.</p>
+          </div>
+          <Link to="/transactions" className="section-link">계좌 관리 <ChevronRight size={14} /></Link>
+        </div>
+        <div className="dashboard-account-list">
+          {accountBalances.map((account) => (
+            <div key={account.id} className="dashboard-account-item">
+              <span>{account.name}</span>
+              <strong>{formatWon(account.balance)}</strong>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className="dashboard-grid">
@@ -293,7 +320,7 @@ export default function Dashboard() {
             <Link to="/transactions" className="section-link">전체 보기 <ChevronRight size={14} /></Link>
           </div>
           {analytics.recentTransactions.length > 0 ? (
-            <ul className="activity-list">{analytics.recentTransactions.map((transaction) => <ActivityItem key={transaction.id} transaction={transaction} />)}</ul>
+            <ul className="activity-list">{analytics.recentTransactions.map((transaction) => <ActivityItem key={transaction.id} transaction={transaction} accountNames={accountNames} />)}</ul>
           ) : (
             <EmptyState title="첫 거래를 기록해보세요" description="거래 내역이 이곳에 최신순으로 표시됩니다." />
           )}
